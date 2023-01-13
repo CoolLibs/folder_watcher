@@ -1,7 +1,3 @@
 #pragma once
 
-namespace folder_watcher {
-
-
-    
-} // namespace folder_watcher
+#include "../src/FolderWatcher.hpp"

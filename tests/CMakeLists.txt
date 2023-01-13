@@ -22,6 +22,10 @@ if(WARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER)
     endif()
 endif()
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    TEST_FOLDER="${CMAKE_CURRENT_SOURCE_DIR}/watched"
+)
+
 # ---Include our library---
 add_subdirectory(.. ${CMAKE_CURRENT_SOURCE_DIR}/build/folder_watcher)
 target_link_libraries(${PROJECT_NAME} PRIVATE folder_watcher::folder_watcher)
