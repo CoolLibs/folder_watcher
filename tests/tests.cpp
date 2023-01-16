@@ -15,14 +15,26 @@ auto main(int argc, char* argv[]) -> int
         && exit_code == 0 // Only open the window if the tests passed; this makes it easier to notice when some tests fail
     )
     {
-        auto                          watchedPath = std::filesystem::path(TEST_FOLDER);
-        folder_watcher::FolderWatcher folder_watcher{watchedPath};
+        // Folder Path
+        auto watchedPath = std::filesystem::path(TEST_FOLDER);
 
+        // Callbacks
         folder_watcher::FolderWatcher_Callbacks callbacks;
-        callbacks.on_file_added = [](std::string_view path){ std::cout << "file added " << path << std::endl; };
-        callbacks.on_file_changed = [](std::string_view path){ std::cout << "file changed " << path << std::endl; };
-        callbacks.on_file_removed = [](std::string_view path){ std::cout << "file removed " << path << std::endl; };
-        callbacks.on_folder_path_invalid = [](std::string_view path){ std::cout << "folder path invalid " << path << std::endl; };        
+        callbacks.on_added_file = [](std::string_view path) {
+            std::cout << "file added " << path << std::endl;
+        };
+        callbacks.on_changed_file = [](std::string_view path) {
+            std::cout << "file changed " << path << std::endl;
+        };
+        callbacks.on_removed_file = [](std::string_view path) {
+            std::cout << "file removed " << ((!path.empty()) ? path : "jai pas") << std::endl;
+        };
+        callbacks.on_invalid_folder_path = [](std::string_view path) {
+            std::cout << "folder path invalid " << path << std::endl;
+        };
+        
+        // Create the folder path
+        folder_watcher::FolderWatcher folder_watcher{watchedPath};
 
         quick_imgui::loop("folder_watcher tests", [&folder_watcher, &callbacks]() { // Open a window and run all the ImGui-related code
             ImGui::Begin("folder_watcher tests");
