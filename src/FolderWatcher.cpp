@@ -143,7 +143,7 @@ void FolderWatcher::on_added_file(const fs::path& path)
         return;
 
     _path_validity = Valid{};
-    _files.push_back({.path = path, .time_of_last_change = time_of_last_change(path)});
+    _files.push_back({.path = path, .time_of_last_change = time_of_last_change(path) });
     _callbacks.on_added_file(_files.back().path.string());
 }
 

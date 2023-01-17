@@ -5,6 +5,7 @@
 #include <functional>
 #include <utility>
 #include <variant>
+#include <vector>
 
 namespace folder_watcher {
 namespace fs = std::filesystem;
@@ -12,11 +13,10 @@ namespace fs = std::filesystem;
 struct File {
     fs::path           path;                // NOLINT
     fs::file_time_type time_of_last_change; // NOLINT
-    fs::file_time_type time_of_last_check;  // NOLINT
 
     auto operator==(const File& a) const -> bool
     {
-        return path.string() == a.path.string();
+        return path == a.path;
     }
 };
 
