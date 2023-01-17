@@ -6,58 +6,34 @@
 
 namespace folder_watcher {
 
-namespace fs                     = std::filesystem;
-using RecursiveDirectoryIterator = std::filesystem::recursive_directory_iterator;
-using DirectoryIterator          = std::filesystem::directory_iterator;
+using RecursiveDirectoryIterator = fs::recursive_directory_iterator;
+using DirectoryIterator          = fs::directory_iterator;
 using Clock                      = std::chrono::steady_clock;
 
-// move to utils file ? put back the try/catch ?
-// ToDo use it
-static auto get_time_of_last_change(const std::filesystem::path& p_path) noexcept -> std::filesystem::file_time_type
+FolderWatcher::FolderWatcher(fs::path folder_path, FolderWatcher_Config config)
+    : _path(std::move(folder_path)), _folder_last_change(fs::last_write_time(_path)), _config(config)
 {
-    return std::filesystem::last_write_time(p_path);
-}
-
-FolderWatcher::FolderWatcher(std::filesystem::path folder_path, FolderWatcher_Config config)
-    : _path(std::move(folder_path)), _folder_last_change(get_time_of_last_change(_path)), _config(config)
-{
-    refresh_files();
+    init_files();
 };
 
 void FolderWatcher::update(const FolderWatcher_Callbacks& p_callbacks)
 {
-    // checkValidity()
-    // ToDo: Ou alors si le dossier existe pas on le créer ?
     // ToDo state
-    if (!std::filesystem::exists(_path))
+    if (!fs::exists(_path) || hasCheckTooRecently())
         return;
-
-    // last_check is static so it won't update every tick
-    {
-        static auto last_check   = Clock::now();
-        const auto  now          = Clock::now();
-        const auto  elapsed_time = std::chrono::duration<float>{now - last_check};
-
-        if (elapsed_time.count() < _config.delay_between_checks)
-            return;
-        last_check = now;
-    }
-    //auto const a = get_time_of_last_change(_path);
-    //if ( a == _folder_last_change)
-    //     return;
 
     std::vector<File> will_be_removed{};
     for (File& file : _files)
     {
         // Files deleted
-        if (!std::filesystem::exists(file.path))
+        if (!fs::exists(file.path))
         {
             will_be_removed.push_back(file);
             continue;
         }
 
         // File changed
-        const auto last_change = get_time_of_last_change(file.path);
+        const auto last_change = fs::last_write_time(file.path);
         if (last_change != file.time_of_last_change)
         {
             on_changed_file(file, p_callbacks);
@@ -67,14 +43,26 @@ void FolderWatcher::update(const FolderWatcher_Callbacks& p_callbacks)
 
     remove_files(p_callbacks, will_be_removed);
     check_for_new_paths(p_callbacks);
-    _folder_last_change = get_time_of_last_change(_path);
+    _folder_last_change = fs::last_write_time(_path);
+}
+auto FolderWatcher::hasCheckTooRecently() const -> bool
+{
+    static auto last_check   = Clock::now();
+    const auto  now          = Clock::now();
+    const auto  elapsed_time = std::chrono::duration<float>{now - last_check};
+
+    if (elapsed_time.count() < _config.delay_between_checks)
+        return true;
+
+    last_check = now;
+    return false;
 }
 
-void FolderWatcher::refresh_files()
+void FolderWatcher::init_files()
 {
     // sort isn't that useful ? remove operator
     // std::sort(_files.begin(), _files.end());
-    //ToDO callbacks
+    // ToDO callbacks
     if (_config.recursive_watcher)
     {
         for (const auto& entry : RecursiveDirectoryIterator(_path))
@@ -87,16 +75,16 @@ void FolderWatcher::refresh_files()
     }
 }
 
-void FolderWatcher::set_path(std::filesystem::path path)
+void FolderWatcher::set_path(fs::path path)
 {
     _path          = std::move(path);
     _path_validity = Unknown{};
 };
 
-void FolderWatcher::add_path_to_files(std::filesystem::path const& path)
+void FolderWatcher::add_path_to_files(fs::path const& path)
 {
-    if (std::filesystem::is_regular_file(path))
-        _files.push_back({.path = path, .time_of_last_change = get_time_of_last_change(path)});
+    if (fs::is_regular_file(path))
+        _files.push_back({.path = path, .time_of_last_change = fs::last_write_time(path)});
 }
 
 void FolderWatcher::check_for_new_paths(const FolderWatcher_Callbacks& p_callbacks)
@@ -123,17 +111,18 @@ void FolderWatcher::remove_files(const FolderWatcher_Callbacks& p_callbacks, std
     if (will_be_removed.empty())
         return;
 
-    std::vector<File> new_files;
-
-    // TODO std::filter ?
-    std::set_difference(_files.begin(), _files.end(), will_be_removed.begin(), will_be_removed.end(), std::back_inserter(new_files));
-    _files = new_files;
+    _files.erase(
+        std::remove_if(_files.begin(), _files.end(), [&will_be_removed](const File& f) {
+            return std::find(will_be_removed.begin(), will_be_removed.end(), f) != will_be_removed.end();
+        }),
+        _files.end()
+    );
 
     for (File const& file : will_be_removed)
         on_removed_file(file, p_callbacks);
 }
 
-void FolderWatcher::check_for_added_files(const FolderWatcher_Callbacks& p_callbacks, std::filesystem::directory_entry entry)
+void FolderWatcher::check_for_added_files(const FolderWatcher_Callbacks& p_callbacks, const fs::directory_entry& entry)
 {
     if (!entry.is_regular_file())
         return;
@@ -145,7 +134,7 @@ void FolderWatcher::check_for_added_files(const FolderWatcher_Callbacks& p_callb
 }
 
 // répétition, on peut refacto ?
-void FolderWatcher::on_added_file(const std::filesystem::path& p_path, const FolderWatcher_Callbacks& p_callbacks)
+void FolderWatcher::on_added_file(const fs::path& p_path, const FolderWatcher_Callbacks& p_callbacks)
 {
     add_path_to_files(p_path);
     p_callbacks.on_added_file(_files.back().path.string());
@@ -160,7 +149,7 @@ void FolderWatcher::on_removed_file(File const& p_file, const FolderWatcher_Call
 void FolderWatcher::on_changed_file(File& p_file, const FolderWatcher_Callbacks& p_callbacks)
 {
     _path_validity             = Valid{};
-    p_file.time_of_last_change = get_time_of_last_change(p_file.path);
+    p_file.time_of_last_change = fs::last_write_time(p_file.path);
     p_callbacks.on_changed_file(p_file.path.string());
 }
 
