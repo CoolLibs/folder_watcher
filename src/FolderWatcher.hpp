@@ -9,8 +9,6 @@
 namespace folder_watcher {
 namespace fs = std::filesystem;
 
-static auto time_of_last_change(const std::filesystem::path& path) -> std::filesystem::file_time_type;
-
 struct File {
     fs::path           path;                // NOLINT
     fs::file_time_type time_of_last_change; // NOLINT
@@ -38,6 +36,9 @@ struct FolderWatcher_Callbacks {
 class FolderWatcher {
 public:
     explicit FolderWatcher(fs::path folder_path = {}, FolderWatcher_Callbacks = {}, FolderWatcher_Config = {});
+
+    /// `update` needs to be call every tick.
+    /// This method is listening for changes inside the `folder_path`
     void update();
 
 public:
@@ -48,13 +49,28 @@ public:
     [[maybe_unused]] inline void               set_path(fs::path);
 
 private:
-    void               init_files();
-    void               check_for_new_paths();
-    void               remove_files(std::vector<File>& will_be_removed);
-    void               check_for_added_files(const fs::directory_entry&);
+    /// This method should only be called in the constructor.
+    /// Its goal is to fill the _files attribute.
+    /// It also check for invalid directory path.
+    void init_files();
+
+    /// This method compares the content of the folder and the content of the _files vector.
+    /// If a file is not listed in _files, we add it by calling `add_to_files`
+    void check_for_new_paths();
+
+    /// Removes a vector of <File> from the _files attribute.
+    void remove_files(std::vector<File>& will_be_removed);
+
+    /// Add a path to the _files attribute by calling `on_added_file` method.
+    void add_to_files(const fs::directory_entry&);
+
+    /// Verifies is the update method should be executed or not.
+    /// It uses the FolderWatcher_Config::delay_between_checks
     [[nodiscard]] auto hasCheckTooRecently() const -> bool;
 
 private:
+    /// These methods call the corresponding callback provided by the FolderWatcher_Callbacks in the constructor.
+
     void on_added_file(const fs::path&);
     void on_removed_file(File const&);
     void on_changed_file(File&);

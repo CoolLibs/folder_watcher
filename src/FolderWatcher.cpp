@@ -1,8 +1,7 @@
 #include "./FolderWatcher.hpp"
 #include <algorithm>
-#include <filesystem>
 #include <iostream>
-#include <utility>
+#include "./utils.hpp"
 
 namespace folder_watcher {
 
@@ -10,23 +9,33 @@ using RecursiveDirectoryIterator = fs::recursive_directory_iterator;
 using DirectoryIterator          = fs::directory_iterator;
 using Clock                      = std::chrono::steady_clock;
 
-static auto time_of_last_change(const std::filesystem::path& path) -> std::filesystem::file_time_type
-{
-    try
-    {
-        return std::filesystem::last_write_time(path);
-    }
-    catch (...)
-    {
-        return {};
-    }
-}
-
 FolderWatcher::FolderWatcher(fs::path folder_path, FolderWatcher_Callbacks callbacks, FolderWatcher_Config config)
     : _path(std::move(folder_path)), _folder_last_change(time_of_last_change(_path)), _config(config), _callbacks(std::move(callbacks))
 {
     init_files();
 };
+
+void FolderWatcher::init_files()
+{
+    _files.clear();
+
+    if (!fs::exists(_path))
+    {
+        _path_validity = Invalid{};
+        return;
+    }
+
+    if (_config.recursive_watcher)
+    {
+        for (const auto& entry : RecursiveDirectoryIterator(_path))
+            on_added_file(entry);
+    }
+    else
+    {
+        for (const auto& entry : DirectoryIterator(_path))
+            on_added_file(entry);
+    }
+}
 
 void FolderWatcher::update()
 {
@@ -62,6 +71,7 @@ void FolderWatcher::update()
     check_for_new_paths();
     _folder_last_change = time_of_last_change(_path);
 }
+
 auto FolderWatcher::hasCheckTooRecently() const -> bool
 {
     static auto last_check   = Clock::now();
@@ -73,28 +83,6 @@ auto FolderWatcher::hasCheckTooRecently() const -> bool
 
     last_check = now;
     return false;
-}
-
-void FolderWatcher::init_files()
-{
-    _files.clear();
-
-    if (!fs::exists(_path))
-    {
-        _path_validity = Invalid{};
-        return;
-    }
-
-    if (_config.recursive_watcher)
-    {
-        for (const auto& entry : RecursiveDirectoryIterator(_path))
-            on_added_file(entry);
-    }
-    else
-    {
-        for (const auto& entry : DirectoryIterator(_path))
-            on_added_file(entry);
-    }
 }
 
 [[maybe_unused]] void FolderWatcher::set_path(fs::path path)
@@ -109,7 +97,7 @@ void FolderWatcher::check_for_new_paths()
     {
         for (const auto& entry : RecursiveDirectoryIterator(_path))
         {
-            check_for_added_files(entry);
+            add_to_files(entry);
         }
     }
 
@@ -117,7 +105,7 @@ void FolderWatcher::check_for_new_paths()
     {
         for (const auto& entry : DirectoryIterator(_path))
         {
-            check_for_added_files(entry);
+            add_to_files(entry);
         }
     }
 }
@@ -138,18 +126,17 @@ void FolderWatcher::remove_files(std::vector<File>& will_be_removed)
         on_removed_file(file);
 }
 
-void FolderWatcher::check_for_added_files(const fs::directory_entry& entry)
+void FolderWatcher::add_to_files(const fs::directory_entry& entry)
 {
-    if (!entry.is_regular_file())
+    if (entry.is_directory())
         return;
 
-    // If the file is not found in _files
+    // If the file is not found in _files, we add it
     auto const file_iterator = std::find_if(_files.begin(), _files.end(), [entry](File const& file) { return file.path == entry; });
     if (file_iterator == _files.end())
         on_added_file(entry.path());
 }
 
-// répétition, on peut refacto ?
 void FolderWatcher::on_added_file(const fs::path& path)
 {
     if (fs::is_directory(path))
