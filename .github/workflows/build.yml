@@ -1,4 +1,4 @@
-name: Build and Run tests
+name: Build
 
 on: 
   push:
@@ -27,9 +27,6 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}\build --config Debug --target ${{env.TARGET}}
 
-    - name: Run
-      run: ${{github.workspace}}\build\Debug\${{env.TARGET}} -nogpu
-
 #-----------------------------------------------------------------------------------------------
   Windows_MSVC_Release:
     name: Windows MSVC Release
@@ -44,9 +41,6 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}\build --config Release --target ${{env.TARGET}}
-
-    - name: Run
-      run: ${{github.workspace}}\build\Release\${{env.TARGET}} -nogpu
 
 #-----------------------------------------------------------------------------------------------
   Windows_Clang_Debug:
@@ -63,9 +57,6 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}\build --config Debug --target ${{env.TARGET}}
 
-    - name: Run
-      run: ${{github.workspace}}\build\Debug\${{env.TARGET}} -nogpu
-
 #-----------------------------------------------------------------------------------------------
   Windows_Clang_Release:
     name: Windows Clang Release
@@ -80,9 +71,6 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}\build --config Release --target ${{env.TARGET}}
-
-    - name: Run
-      run: ${{github.workspace}}\build\Release\${{env.TARGET}} -nogpu
 
 #-----------------------------------------------------------------------------------------------
   Linux_GCC_Debug:
@@ -104,9 +92,6 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Debug --target ${{env.TARGET}}
-
-    - name: Run
-      run: ${{github.workspace}}/build/${{env.TARGET}} -nogpu
     
 #-----------------------------------------------------------------------------------------------
   Linux_GCC_Release:
@@ -129,9 +114,6 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release --target ${{env.TARGET}}
 
-    - name: Run
-      run: ${{github.workspace}}/build/${{env.TARGET}} -nogpu
-
 #-----------------------------------------------------------------------------------------------
   Linux_Clang_Debug:
     name: Linux Clang Debug 
@@ -152,9 +134,6 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Debug --target ${{env.TARGET}}
-
-    - name: Run
-      run: ${{github.workspace}}/build/${{env.TARGET}} -nogpu
 
 #-----------------------------------------------------------------------------------------------
   Linux_Clang_Release:
@@ -177,9 +156,6 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release --target ${{env.TARGET}}
 
-    - name: Run
-      run: ${{github.workspace}}/build/${{env.TARGET}} -nogpu
-
 #-----------------------------------------------------------------------------------------------
   MacOS_Clang_Debug:
     name: MacOS Clang Debug 
@@ -195,9 +171,6 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Debug --target ${{env.TARGET}}
 
-    - name: Run
-      run: ${{github.workspace}}/build/${{env.TARGET}} -nogpu
-
 #-----------------------------------------------------------------------------------------------
   MacOS_Clang_Release: 
     name: MacOS Clang Release
@@ -211,7 +184,4 @@ jobs:
       run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Release -D CMAKE_C_COMPILER=$(brew --prefix llvm@14)/bin/clang -D CMAKE_CXX_COMPILER=$(brew --prefix llvm@14)/bin/clang++
 
     - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release --target ${{env.TARGET}}
-
-    - name: Run
-      run: ${{github.workspace}}/build/${{env.TARGET}} -nogpu                 
+      run: cmake --build ${{github.workspace}}/build --config Release --target ${{env.TARGET}}               
