@@ -35,11 +35,10 @@ public:
     /// It will call the callbacks whenever an event occurs.
     void update(Callbacks const& = {}) const;
 
-public:
-    [[nodiscard]] inline constexpr auto        is_folder_path_invalid() const -> bool { return std::holds_alternative<Invalid>(_path_validity); };
-    [[nodiscard]] inline constexpr auto        is_folder_path_valid() const -> bool { return std::holds_alternative<Valid>(_path_validity); };
-    [[maybe_unused]] [[nodiscard]] inline auto folder_path() const -> fs::path { return _path; }
-    [[maybe_unused]] inline void               set_path(fs::path);
+    // [[nodiscard]] constexpr auto        is_folder_path_invalid() const -> bool { return !_path_validity; };
+    [[nodiscard]] constexpr auto        is_folder_path_valid() const -> bool { return _path_validity; };
+    [[maybe_unused]] [[nodiscard]] auto get_folder_path() const -> fs::path { return _path; }
+    [[maybe_unused]] void               set_folder_path(Callbacks const&, fs::path);
 
 private:
     struct File {
@@ -49,6 +48,9 @@ private:
     };
 
 private:
+    /// Check if the folder path exists and set it into _path_validity
+    void update_path_validity() const;
+
     /// This method compares the content of the folder and the content of the _files vector.
     /// If a file is not listed in _files, we add it by calling `add_to_files`
     void check_for_new_paths(Callbacks const&) const;
@@ -61,7 +63,7 @@ private:
 
     /// Verifies is the update method should be executed or not.
     /// It uses the FolderWatcher_Config::delay_between_checks
-    [[nodiscard]] auto hasCheckTooRecently() const -> bool;
+    [[nodiscard]] auto has_check_too_recently() const -> bool;
 
     /// These methods call the corresponding callback.
     void on_added_file(Callbacks const&, fs::path const&) const;
@@ -70,15 +72,9 @@ private:
     void on_folder_path_invalid(Callbacks const&) const;
 
 private:
-    struct Valid {};
-    struct Invalid {};
-    struct Unknown {};
-    using PathValidity = std::variant<Valid, Invalid, Unknown>;
-
-private:
     fs::path                   _path{};
     mutable fs::file_time_type _folder_last_change{};
-    mutable PathValidity       _path_validity = Unknown{};
+    mutable bool               _path_validity{};
     Config                     _config{};
     mutable std::vector<File>  _files{};
 };
