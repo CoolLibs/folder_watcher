@@ -34,12 +34,12 @@ auto main(int argc, char* argv[]) -> int
         };
         
         // Create the folder path
-        folder_watcher::FolderWatcher folder_watcher{watchedPath};
+        folder_watcher::FolderWatcher folder_watcher{watchedPath, callbacks};
 
-        quick_imgui::loop("folder_watcher tests", [&folder_watcher, &callbacks]() { // Open a window and run all the ImGui-related code
+        quick_imgui::loop("folder_watcher tests", [&folder_watcher]() { // Open a window and run all the ImGui-related code
             ImGui::Begin("folder_watcher tests");
             ImGui::End();
-            folder_watcher.update(callbacks);
+            folder_watcher.update();
         });
     }
     return exit_code;

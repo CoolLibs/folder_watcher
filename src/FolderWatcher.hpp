@@ -7,18 +7,14 @@
 #include <variant>
 
 namespace folder_watcher {
-
 namespace fs = std::filesystem;
 
-struct File {
-    fs::path           path;
-    fs::file_time_type time_of_last_change;
-    fs::file_time_type time_of_last_check;
+static auto time_of_last_change(const std::filesystem::path& path) -> std::filesystem::file_time_type;
 
-    auto operator<(const File& a) const -> bool
-    {
-        return path.string() < a.path.string();
-    }
+struct File {
+    fs::path           path;                // NOLINT
+    fs::file_time_type time_of_last_change; // NOLINT
+    fs::file_time_type time_of_last_check;  // NOLINT
 
     auto operator==(const File& a) const -> bool
     {
@@ -41,28 +37,29 @@ struct FolderWatcher_Callbacks {
 
 class FolderWatcher {
 public:
-    explicit FolderWatcher(fs::path folder_path = {}, FolderWatcher_Config = {});
-    void update(const FolderWatcher_Callbacks&);
+    explicit FolderWatcher(fs::path folder_path = {}, FolderWatcher_Callbacks = {}, FolderWatcher_Config = {});
+    void update();
 
 public:
-    [[nodiscard]] inline constexpr auto folder_path_is_valid() const -> bool { return std::holds_alternative<Valid>(_path_validity); };
-    [[nodiscard]] inline auto           folder_path() const -> fs::path { return _path; }
-    inline void                         set_path(fs::path path);
+    [[nodiscard]] inline constexpr auto        is_folder_path_invalid() const -> bool { return std::holds_alternative<Invalid>(_path_validity); };
+    [[nodiscard]] inline constexpr auto        is_folder_path_valid() const -> bool { return std::holds_alternative<Valid>(_path_validity); };
+    [[maybe_unused]] [[nodiscard]] inline auto folder_path() const -> fs::path { return _path; }
+    [[maybe_unused]] inline void               set_callbacks(FolderWatcher_Callbacks callbacks) { _callbacks = std::move(callbacks); };
+    [[maybe_unused]] inline void               set_path(fs::path);
 
 private:
-    void init_files();
-    void add_path_to_files(fs::path const&);
-    void check_for_new_paths(const FolderWatcher_Callbacks&);
-    void remove_files(const FolderWatcher_Callbacks&, std::vector<File>& will_be_removed);
-    void check_for_added_files(const FolderWatcher_Callbacks&, const fs::directory_entry&);
-    bool hasCheckTooRecently() const;
+    void               init_files();
+    void               check_for_new_paths();
+    void               remove_files(std::vector<File>& will_be_removed);
+    void               check_for_added_files(const fs::directory_entry&);
+    [[nodiscard]] auto hasCheckTooRecently() const -> bool;
 
 private:
-    void on_added_file(const fs::path&, const FolderWatcher_Callbacks&);
-    void on_removed_file(File const&, const FolderWatcher_Callbacks&);
-    void on_changed_file(File&, const FolderWatcher_Callbacks&);
+    void on_added_file(const fs::path&);
+    void on_removed_file(File const&);
+    void on_changed_file(File&);
 
-    void on_folder_path_invalid(const FolderWatcher_Callbacks&);
+    void on_folder_path_invalid();
 
 private:
     struct Valid {};
@@ -71,11 +68,12 @@ private:
     using PathValidity = std::variant<Valid, Invalid, Unknown>;
 
 private:
-    fs::path             _path{};
-    fs::file_time_type   _folder_last_change{};
-    PathValidity         _path_validity = Unknown{};
-    FolderWatcher_Config _config{};
-    std::vector<File>    _files{};
+    fs::path                _path{};
+    fs::file_time_type      _folder_last_change{};
+    PathValidity            _path_validity = Unknown{};
+    FolderWatcher_Config    _config{};
+    FolderWatcher_Callbacks _callbacks{};
+    std::vector<File>       _files{};
 };
 
 } // namespace folder_watcher

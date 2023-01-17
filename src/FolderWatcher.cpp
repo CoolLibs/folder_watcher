@@ -10,17 +10,34 @@ using RecursiveDirectoryIterator = fs::recursive_directory_iterator;
 using DirectoryIterator          = fs::directory_iterator;
 using Clock                      = std::chrono::steady_clock;
 
-FolderWatcher::FolderWatcher(fs::path folder_path, FolderWatcher_Config config)
-    : _path(std::move(folder_path)), _folder_last_change(fs::last_write_time(_path)), _config(config)
+static auto time_of_last_change(const std::filesystem::path& path) -> std::filesystem::file_time_type
+{
+    try
+    {
+        return std::filesystem::last_write_time(path);
+    }
+    catch (...)
+    {
+        return {};
+    }
+}
+
+FolderWatcher::FolderWatcher(fs::path folder_path, FolderWatcher_Callbacks callbacks, FolderWatcher_Config config)
+    : _path(std::move(folder_path)), _folder_last_change(time_of_last_change(_path)), _config(config), _callbacks(std::move(callbacks))
 {
     init_files();
 };
 
-void FolderWatcher::update(const FolderWatcher_Callbacks& p_callbacks)
+void FolderWatcher::update()
 {
-    // ToDo state
-    if (!fs::exists(_path) || hasCheckTooRecently())
+    if (hasCheckTooRecently())
         return;
+
+    if (is_folder_path_invalid() || !fs::exists(_path))
+    {
+        on_folder_path_invalid();
+        return;
+    }
 
     std::vector<File> will_be_removed{};
     for (File& file : _files)
@@ -33,17 +50,17 @@ void FolderWatcher::update(const FolderWatcher_Callbacks& p_callbacks)
         }
 
         // File changed
-        const auto last_change = fs::last_write_time(file.path);
+        const auto last_change = time_of_last_change(file.path);
         if (last_change != file.time_of_last_change)
         {
-            on_changed_file(file, p_callbacks);
+            on_changed_file(file);
             continue;
         }
     }
 
-    remove_files(p_callbacks, will_be_removed);
-    check_for_new_paths(p_callbacks);
-    _folder_last_change = fs::last_write_time(_path);
+    remove_files(will_be_removed);
+    check_for_new_paths();
+    _folder_last_change = time_of_last_change(_path);
 }
 auto FolderWatcher::hasCheckTooRecently() const -> bool
 {
@@ -60,40 +77,39 @@ auto FolderWatcher::hasCheckTooRecently() const -> bool
 
 void FolderWatcher::init_files()
 {
-    // sort isn't that useful ? remove operator
-    // std::sort(_files.begin(), _files.end());
-    // ToDO callbacks
+    _files.clear();
+
+    if (!fs::exists(_path))
+    {
+        _path_validity = Invalid{};
+        return;
+    }
+
     if (_config.recursive_watcher)
     {
         for (const auto& entry : RecursiveDirectoryIterator(_path))
-            add_path_to_files(entry.path());
+            on_added_file(entry);
     }
     else
     {
         for (const auto& entry : DirectoryIterator(_path))
-            add_path_to_files(entry.path());
+            on_added_file(entry);
     }
 }
 
-void FolderWatcher::set_path(fs::path path)
+[[maybe_unused]] void FolderWatcher::set_path(fs::path path)
 {
     _path          = std::move(path);
     _path_validity = Unknown{};
 };
 
-void FolderWatcher::add_path_to_files(fs::path const& path)
-{
-    if (fs::is_regular_file(path))
-        _files.push_back({.path = path, .time_of_last_change = fs::last_write_time(path)});
-}
-
-void FolderWatcher::check_for_new_paths(const FolderWatcher_Callbacks& p_callbacks)
+void FolderWatcher::check_for_new_paths()
 {
     if (_config.recursive_watcher)
     {
         for (const auto& entry : RecursiveDirectoryIterator(_path))
         {
-            check_for_added_files(p_callbacks, entry);
+            check_for_added_files(entry);
         }
     }
 
@@ -101,12 +117,12 @@ void FolderWatcher::check_for_new_paths(const FolderWatcher_Callbacks& p_callbac
     {
         for (const auto& entry : DirectoryIterator(_path))
         {
-            check_for_added_files(p_callbacks, entry);
+            check_for_added_files(entry);
         }
     }
 }
 
-void FolderWatcher::remove_files(const FolderWatcher_Callbacks& p_callbacks, std::vector<File>& will_be_removed)
+void FolderWatcher::remove_files(std::vector<File>& will_be_removed)
 {
     if (will_be_removed.empty())
         return;
@@ -119,10 +135,10 @@ void FolderWatcher::remove_files(const FolderWatcher_Callbacks& p_callbacks, std
     );
 
     for (File const& file : will_be_removed)
-        on_removed_file(file, p_callbacks);
+        on_removed_file(file);
 }
 
-void FolderWatcher::check_for_added_files(const FolderWatcher_Callbacks& p_callbacks, const fs::directory_entry& entry)
+void FolderWatcher::check_for_added_files(const fs::directory_entry& entry)
 {
     if (!entry.is_regular_file())
         return;
@@ -130,33 +146,38 @@ void FolderWatcher::check_for_added_files(const FolderWatcher_Callbacks& p_callb
     // If the file is not found in _files
     auto const file_iterator = std::find_if(_files.begin(), _files.end(), [entry](File const& file) { return file.path == entry; });
     if (file_iterator == _files.end())
-        on_added_file(entry.path(), p_callbacks);
+        on_added_file(entry.path());
 }
 
 // répétition, on peut refacto ?
-void FolderWatcher::on_added_file(const fs::path& p_path, const FolderWatcher_Callbacks& p_callbacks)
+void FolderWatcher::on_added_file(const fs::path& path)
 {
-    add_path_to_files(p_path);
-    p_callbacks.on_added_file(_files.back().path.string());
+    if (fs::is_directory(path))
+        return;
+
+    _path_validity = Valid{};
+    _files.push_back({.path = path, .time_of_last_change = time_of_last_change(path)});
+    _callbacks.on_added_file(_files.back().path.string());
 }
 
-void FolderWatcher::on_removed_file(File const& p_file, const FolderWatcher_Callbacks& p_callbacks)
+void FolderWatcher::on_removed_file(File const& file)
 {
-    p_callbacks.on_removed_file(p_file.path.string());
-    _files.erase(std::remove_if(_files.begin(), _files.end(), [p_file](const File& cur_file) { return p_file == cur_file; }), _files.end());
+    _path_validity = Valid{};
+    _callbacks.on_removed_file(file.path.string());
+    _files.erase(std::remove_if(_files.begin(), _files.end(), [file](const File& cur_file) { return file == cur_file; }), _files.end());
 }
 
-void FolderWatcher::on_changed_file(File& p_file, const FolderWatcher_Callbacks& p_callbacks)
+void FolderWatcher::on_changed_file(File& file)
 {
-    _path_validity             = Valid{};
-    p_file.time_of_last_change = fs::last_write_time(p_file.path);
-    p_callbacks.on_changed_file(p_file.path.string());
+    _path_validity           = Valid{};
+    file.time_of_last_change = time_of_last_change(file.path);
+    _callbacks.on_changed_file(file.path.string());
 }
 
-void FolderWatcher::on_folder_path_invalid(const FolderWatcher_Callbacks& p_callbacks)
+void FolderWatcher::on_folder_path_invalid()
 {
     _path_validity = Invalid{};
-    p_callbacks.on_invalid_folder_path(_path.string());
+    _callbacks.on_invalid_folder_path(_path.string());
 }
 
 } // namespace folder_watcher
