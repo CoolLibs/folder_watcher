@@ -4,10 +4,10 @@
 auto main() -> int
 {
     // Folder Path
-    auto watchedPath = std::filesystem::path(TEST_FOLDER);
+    auto const watched_path = std::filesystem::path{TEST_FOLDER};
 
     // Callbacks
-    const folder_watcher::FolderWatcher_Callbacks callbacks{
+    auto const callbacks = folder_watcher::FolderWatcher_Callbacks{
         .on_added_file          = [](std::string_view path) { std::cout << "file added " << path << std::endl; },
         .on_removed_file        = [](std::string_view path) { std::cout << "file removed " << path << std::endl; },
         .on_changed_file        = [](std::string_view path) { std::cout << "file changed " << path << std::endl; },
@@ -15,11 +15,11 @@ auto main() -> int
     };
 
     // Create the folder path
-    folder_watcher::FolderWatcher folder_watcher{watchedPath, callbacks};
+    auto const folder_watcher = folder_watcher::FolderWatcher{watched_path, callbacks};
 
+    // Loop on update
     while (true)
     {
-        // Loop on update
         folder_watcher.update();
-    };
+    }
 }

@@ -22,6 +22,7 @@ if(WARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER)
     endif()
 endif()
 
+# ---Set path to watched folder for tests---
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     TEST_FOLDER="${CMAKE_CURRENT_SOURCE_DIR}/watched"
 )

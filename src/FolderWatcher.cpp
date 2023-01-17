@@ -37,7 +37,7 @@ void FolderWatcher::init_files()
     }
 }
 
-void FolderWatcher::update()
+void FolderWatcher::update() const
 {
     if (hasCheckTooRecently())
         return;
@@ -91,7 +91,7 @@ auto FolderWatcher::hasCheckTooRecently() const -> bool
     _path_validity = Unknown{};
 };
 
-void FolderWatcher::check_for_new_paths()
+void FolderWatcher::check_for_new_paths() const
 {
     if (_config.recursive_watcher)
     {
@@ -110,7 +110,7 @@ void FolderWatcher::check_for_new_paths()
     }
 }
 
-void FolderWatcher::remove_files(std::vector<File>& will_be_removed)
+void FolderWatcher::remove_files(std::vector<File>& will_be_removed) const
 {
     if (will_be_removed.empty())
         return;
@@ -126,7 +126,7 @@ void FolderWatcher::remove_files(std::vector<File>& will_be_removed)
         on_removed_file(file);
 }
 
-void FolderWatcher::add_to_files(const fs::directory_entry& entry)
+void FolderWatcher::add_to_files(const fs::directory_entry& entry) const
 {
     if (entry.is_directory())
         return;
@@ -137,31 +137,31 @@ void FolderWatcher::add_to_files(const fs::directory_entry& entry)
         on_added_file(entry.path());
 }
 
-void FolderWatcher::on_added_file(const fs::path& path)
+void FolderWatcher::on_added_file(const fs::path& path) const
 {
     if (fs::is_directory(path))
         return;
 
     _path_validity = Valid{};
-    _files.push_back({.path = path, .time_of_last_change = time_of_last_change(path) });
+    _files.push_back({.path = path, .time_of_last_change = time_of_last_change(path)});
     _callbacks.on_added_file(_files.back().path.string());
 }
 
-void FolderWatcher::on_removed_file(File const& file)
+void FolderWatcher::on_removed_file(File const& file) const
 {
     _path_validity = Valid{};
     _callbacks.on_removed_file(file.path.string());
     _files.erase(std::remove_if(_files.begin(), _files.end(), [file](const File& cur_file) { return file == cur_file; }), _files.end());
 }
 
-void FolderWatcher::on_changed_file(File& file)
+void FolderWatcher::on_changed_file(File& file) const
 {
     _path_validity           = Valid{};
     file.time_of_last_change = time_of_last_change(file.path);
     _callbacks.on_changed_file(file.path.string());
 }
 
-void FolderWatcher::on_folder_path_invalid()
+void FolderWatcher::on_folder_path_invalid() const
 {
     _path_validity = Invalid{};
     _callbacks.on_invalid_folder_path(_path.string());

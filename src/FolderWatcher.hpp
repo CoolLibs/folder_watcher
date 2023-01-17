@@ -39,7 +39,7 @@ public:
 
     /// `update` needs to be call every tick.
     /// This method is listening for changes inside the `folder_path`
-    void update();
+    void update() const;
 
 public:
     [[nodiscard]] inline constexpr auto        is_folder_path_invalid() const -> bool { return std::holds_alternative<Invalid>(_path_validity); };
@@ -56,26 +56,23 @@ private:
 
     /// This method compares the content of the folder and the content of the _files vector.
     /// If a file is not listed in _files, we add it by calling `add_to_files`
-    void check_for_new_paths();
+    void check_for_new_paths() const;
 
     /// Removes a vector of <File> from the _files attribute.
-    void remove_files(std::vector<File>& will_be_removed);
+    void remove_files(std::vector<File>& will_be_removed) const;
 
     /// Add a path to the _files attribute by calling `on_added_file` method.
-    void add_to_files(const fs::directory_entry&);
+    void add_to_files(const fs::directory_entry&) const;
 
     /// Verifies is the update method should be executed or not.
     /// It uses the FolderWatcher_Config::delay_between_checks
     [[nodiscard]] auto hasCheckTooRecently() const -> bool;
 
-private:
-    /// These methods call the corresponding callback provided by the FolderWatcher_Callbacks in the constructor.
-
-    void on_added_file(const fs::path&);
-    void on_removed_file(File const&);
-    void on_changed_file(File&);
-
-    void on_folder_path_invalid();
+    /// These methods call the corresponding callback.
+    void on_added_file(fs::path const&) const;
+    void on_removed_file(File const&) const;
+    void on_changed_file(File&) const;
+    void on_folder_path_invalid() const;
 
 private:
     struct Valid {};
@@ -84,12 +81,12 @@ private:
     using PathValidity = std::variant<Valid, Invalid, Unknown>;
 
 private:
-    fs::path                _path{};
-    fs::file_time_type      _folder_last_change{};
-    PathValidity            _path_validity = Unknown{};
-    FolderWatcher_Config    _config{};
-    FolderWatcher_Callbacks _callbacks{};
-    std::vector<File>       _files{};
+    fs::path                   _path{};
+    mutable fs::file_time_type _folder_last_change{};
+    mutable PathValidity       _path_validity = Unknown{};
+    FolderWatcher_Config       _config{};
+    FolderWatcher_Callbacks    _callbacks{};
+    mutable std::vector<File>  _files{};
 };
 
 } // namespace folder_watcher
