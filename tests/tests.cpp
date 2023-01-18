@@ -8,14 +8,14 @@ auto main() -> int
 
     // Callbacks
     auto const callbacks = folder_watcher::Callbacks{
-        .on_file_added          = [](std::string_view path) { std::cout << "file added " << path << std::endl; },
-        .on_file_removed        = [](std::string_view path) { std::cout << "file removed " << path << std::endl; },
-        .on_file_changed        = [](std::string_view path) { std::cout << "file changed " << path << std::endl; },
-        .on_invalid_folder_path = [](std::string_view path) { std::cout << "folder path invalid " << path << std::endl; },
+        .on_file_added          = [](std::filesystem::path const& path) { std::cout << "file added " << path.string() << std::endl; },
+        .on_file_removed        = [](std::filesystem::path const& path) { std::cout << "file removed " << path.string() << std::endl; },
+        .on_file_changed        = [](std::filesystem::path const& path) { std::cout << "file changed " << path.string() << std::endl; },
+        .on_invalid_folder_path = [](std::filesystem::path const& path) { std::cout << "folder path invalid " << path.string() << std::endl; },
     };
 
     // Create the folder path
-    auto const folder_watcher = folder_watcher::FolderWatcher{watched_path};
+    auto folder_watcher = folder_watcher::FolderWatcher{watched_path, {.seconds_between_checks = 0.5f}};
 
     // Loop on update
     while (true)
