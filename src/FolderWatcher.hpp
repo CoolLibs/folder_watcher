@@ -2,15 +2,11 @@
 
 #include <filesystem>
 #include <functional>
-#include <utility>
-#include <variant>
 #include <vector>
-#include "./File.hpp"
-#include "./utils.hpp"
+#include "File.hpp"
+#include "utils.hpp"
 
 namespace folder_watcher {
-
-using Clock = std::chrono::steady_clock;
 
 struct Config {
     /// If false, only watches the files that are direct childs of the watched path.
@@ -29,6 +25,7 @@ struct Callbacks {
     std::function<void(std::filesystem::path)> on_invalid_folder_path;
 };
 
+using Clock  = std::chrono::steady_clock;
 namespace fs = std::filesystem;
 
 class FolderWatcher {
@@ -37,31 +34,33 @@ public:
 
     /// `update()` needs to be called every tick.
     /// It will call the callbacks whenever an event occurs.
-    void update(Callbacks const& = {}) const;
+    void update(Callbacks const&) const;
 
     [[nodiscard]] auto is_folder_path_valid() const -> bool { return _path_exists; };
     [[nodiscard]] auto get_folder_path() const -> fs::path const& { return _path; }
     void               set_folder_path(Callbacks const&, fs::path const&);
 
 private:
-    auto has_invalid_folder_path(Callbacks const&) const -> bool;
-
     void check_and_store_path_existence() const;
-
-    void watch_for_edit_and_remove(Callbacks const&) const;
-
-    /// This method compares the content of the folder and the content of the _files vector.
-    void watch_for_new_paths(Callbacks const&) const;
-
-    /// Add a path to the _files attribute by calling `on_added_file` method.
-    void add_to_files_if_necessary(Callbacks const&, const fs::directory_entry&) const;
-
-    /// Removes a vector of `File`s from _files.
-    void remove_files(Callbacks const&, std::vector<File>& to_remove) const;
 
     /// Verifies is the update method should be executed or not.
     /// It uses the Config::delay_between_checks
     [[nodiscard]] auto has_checked_too_recently() const -> bool;
+
+    /// Call callback `on_invalid_folder_path()` if necessary
+    void update_folder_path_validity(Callbacks const&) const;
+
+    // This method watches into the folder content to detects edit and remove.
+    void watch_for_edit_and_remove(Callbacks const&) const;
+
+    /// This method compares the content of the folder and the content of the `_files` vector.
+    void watch_for_new_paths(Callbacks const&) const;
+
+    /// Add a path to the `_files` attribute
+    void add_to_files_if_necessary(Callbacks const&, const fs::directory_entry&) const;
+
+    /// Removes a vector of `File`s from _files.
+    void remove_files(Callbacks const&, std::vector<File>& to_remove) const;
 
 private:
     fs::path                   _path{};

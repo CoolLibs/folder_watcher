@@ -15,7 +15,7 @@ auto main() -> int
     };
 
     // Create the folder path
-    auto folder_watcher = folder_watcher::FolderWatcher{watched_path, {.seconds_between_checks = 0.5f}};
+    auto folder_watcher = folder_watcher::FolderWatcher{watched_path};
 
     // Loop on update
     while (true)

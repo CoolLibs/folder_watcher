@@ -14,14 +14,18 @@ FolderWatcher::FolderWatcher(fs::path folder_path, Config config)
 
 void FolderWatcher::update(Callbacks const& callbacks) const
 {
-    if (has_checked_too_recently() || has_invalid_folder_path(callbacks))
+    if (has_checked_too_recently())
+        return;
+
+    update_folder_path_validity(callbacks);
+    if (!is_folder_path_valid())
         return;
 
     watch_for_edit_and_remove(callbacks);
 
     watch_for_new_paths(callbacks);
 
-    _folder_last_change = get_time_of_last_change(_path);
+    _folder_last_change = compute_time_of_last_change(_path);
 }
 
 void FolderWatcher::set_folder_path(Callbacks const& callbacks, fs::path const& path)
@@ -31,7 +35,24 @@ void FolderWatcher::set_folder_path(Callbacks const& callbacks, fs::path const& 
     remove_files(callbacks, _files); // Clear all files because the path changed and we might not need to watch them anymore.
 };
 
-auto FolderWatcher::has_invalid_folder_path(Callbacks const& callbacks) const -> bool
+void FolderWatcher::check_and_store_path_existence() const
+{
+    _path_exists = fs::exists(_path);
+}
+
+auto FolderWatcher::has_checked_too_recently() const -> bool
+{
+    const auto now          = Clock::now();
+    const auto elapsed_time = std::chrono::duration<float>{now - _folder_last_check};
+
+    if (elapsed_time.count() < _config.seconds_between_checks)
+        return true;
+
+    _folder_last_check = now;
+    return false;
+}
+
+void FolderWatcher::update_folder_path_validity(Callbacks const& callbacks) const
 {
     bool const was_valid = _path_exists;
     check_and_store_path_existence();
@@ -40,18 +61,7 @@ auto FolderWatcher::has_invalid_folder_path(Callbacks const& callbacks) const ->
     {
         callbacks.on_invalid_folder_path(_path);
         remove_files(callbacks, _files);
-        return true;
     }
-
-    if (!_path_exists)
-        return true;
-
-    return false;
-}
-
-void FolderWatcher::check_and_store_path_existence() const
-{
-    _path_exists = fs::exists(_path);
 }
 
 void FolderWatcher::watch_for_edit_and_remove(Callbacks const& callbacks) const
@@ -60,18 +70,18 @@ void FolderWatcher::watch_for_edit_and_remove(Callbacks const& callbacks) const
     for (File& file : _files)
     {
         // File deleted
-        if (!fs::exists(file.path()))
+        if (!fs::exists(file.get_path()))
         {
             to_remove.push_back(file);
             continue;
         }
 
         // File changed
-        auto const last_change = get_time_of_last_change(file.path());
-        if (last_change != file.time_of_last_change())
+        auto const last_change = compute_time_of_last_change(file.get_path());
+        if (last_change != file.get_time_of_last_change())
         {
-            file.time_of_last_change(last_change);
-            callbacks.on_file_changed(file.path());
+            file.set_time_of_last_change(last_change);
+            callbacks.on_file_changed(file.get_path());
         }
     }
     remove_files(callbacks, to_remove);
@@ -97,7 +107,7 @@ void FolderWatcher::add_to_files_if_necessary(Callbacks const& callbacks, fs::di
         return;
 
     // If the file is not found in _files, we add it
-    auto const file_iterator = std::find_if(_files.begin(), _files.end(), [&entry](File const& file) { return file.path() == entry; });
+    auto const file_iterator = std::find_if(_files.begin(), _files.end(), [&entry](File const& file) { return file.get_path() == entry; });
     if (file_iterator != _files.end())
         return;
 
@@ -108,24 +118,12 @@ void FolderWatcher::add_to_files_if_necessary(Callbacks const& callbacks, fs::di
 void FolderWatcher::remove_files(Callbacks const& callbacks, std::vector<File>& to_remove) const
 {
     for (File const& file : to_remove)
-        callbacks.on_file_removed(file.path());
+        callbacks.on_file_removed(file.get_path());
 
     // Erase all common files in to_remove and in _files
     std::erase_if(_files, [&to_remove](File const& f) {
         return std::find(to_remove.begin(), to_remove.end(), f) != to_remove.end();
     });
-}
-
-auto FolderWatcher::has_checked_too_recently() const -> bool
-{
-    const auto now          = Clock::now();
-    const auto elapsed_time = std::chrono::duration<float>{now - _folder_last_check};
-
-    if (elapsed_time.count() < _config.seconds_between_checks)
-        return true;
-
-    _folder_last_check = now;
-    return false;
 }
 
 } // namespace folder_watcher
