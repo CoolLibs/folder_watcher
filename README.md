@@ -41,44 +41,52 @@ Then include it as:
 
 ### Basic usage
 
-The library is really use to use. First of all, create a `FolderWatcher` instance. A `FolderWatcher` needs a path (for the folder who will be watched), some callbacks (in order to react to the changes) and some configurations if needed.
+The library is really use to use. First of all, create a `FolderWatcher` instance. A `FolderWatcher` needs a path (for the watched folder) and some configurations. You will also need to provide some callbacks (in order to react to the changes) to the update() method.
 
 The callbacks can be created as following :
 ```c++
-folder_watcher::FolderWatcher_Callbacks callbacks{
-    .on_added_file = [](std::string_view path) { std::cout << "File added : " << path << std::endl; },
-    .on_removed_file = [](std::string_view path) { std::cout << "File removed : " << path << std::endl; },
-    .on_changed_file = [](std::string_view path) { std::cout << "File changed : " << path << std::endl; },
-    .on_invalid_folder_path = [](std::string_view path) { std::cout << "Folder path invalid : " << path << std::endl; }
+auto const callbacks = folder_watcher::Callbacks{
+    .on_added_file = [](std::filesystem::path path) { std::cout << "File added : " << path.string() << std::endl; },
+    .on_removed_file = [](std::filesystem::path path) { std::cout << "File removed : " << path.string() << std::endl; },
+    .on_changed_file = [](std::filesystem::path path) { std::cout << "File changed : " << path.string() << std::endl; },
+    .on_invalid_folder_path = [](std::filesystem::path path) { std::cout << "Folder path invalid : " << path.string() << std::endl; }
 };
 ```
 
 The default configuration is the following :
 
 ```c++
-folder_watcher::FolderWatcher_Config config{
-    .recursive_watcher = true,
-    .delay_between_checks = 0.5f
+auto const config = folder_watcher::Config{
+    .seconds_between_checks = 0.5f,
+    .watch_all_subfolders_recursively = true
 };
 ```
 
-You can still easily tweak it as your wish.
+You can still easily tweak it as you wish.
 
 Now, you need to create your Folder Watcher :
 
 ```c++
-folder_watcher::FolderWatcher folder_watcher{your_watched_path, callbacks, config};
+auto folder_watcher = folder_watcher::FolderWatcher{watched_path, config};
 ```
 
-You can create it as following if you're not modifying the configuration :
+Another clean initialization is the following :
+ ```c++
+auto folder_watcher = folder_watcher::FolderWatcher{watched_path, {
+    .seconds_between_checks = 0.5f,
+    .watch_all_subfolders_recursively = false}
+};
+ ```
+
+If you're not modifying the default configuration, you can create the folder watcher as following :
 
 ```c++
-folder_watcher::FolderWatcher folder_watcher{your_watched_path, callbacks};
+auto folder_watcher = folder_watcher::FolderWatcher{watched_path};
 ```
 
 
 Finally, you just need to call the `update` method in your main loop.
 
 ```c++
-folder_watcher.update();
+folder_watcher.update(callbacks);
 ```
