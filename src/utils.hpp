@@ -6,7 +6,7 @@ namespace folder_watcher {
 
 /// Get the last_write_time of a file or a directory.
 /// This method ignores the exceptions.
-inline auto time_of_last_change(std::filesystem::path const& path) -> std::filesystem::file_time_type
+inline auto get_time_of_last_change(std::filesystem::path const& path) -> std::filesystem::file_time_type
 {
     try
     {
