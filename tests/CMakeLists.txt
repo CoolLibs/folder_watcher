@@ -13,8 +13,6 @@ else()
 endif()
 
 # ---Maybe enable warnings as errors---
-set(WARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER OFF CACHE BOOL "ON iff you want to treat warnings as errors")
-
 if(WARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER)
     if(MSVC)
         target_compile_options(${PROJECT_NAME} PRIVATE /WX)
