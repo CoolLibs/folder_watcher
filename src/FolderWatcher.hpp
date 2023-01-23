@@ -10,7 +10,7 @@ namespace folder_watcher {
 
 struct Config {
     /// If false, only watches the files that are direct childs of the watched path.
-    /// If true, all the files in the subfolders will also be watched.
+    /// If true, all the files in all the subfolders will also be watched.
     bool watch_all_subfolders_recursively = true;
 
     /// Delay between two checks for changes.
@@ -33,7 +33,7 @@ public:
     explicit FolderWatcher(fs::path folder_path = {}, Config = {});
 
     /// `update()` needs to be called every tick.
-    /// It will call the callbacks whenever an event occurs.
+    /// It will call the corresponding callback whenever an event occurs.
     void update(Callbacks const&) const;
 
     [[nodiscard]] auto is_folder_path_valid() const -> bool { return _path_exists; };
