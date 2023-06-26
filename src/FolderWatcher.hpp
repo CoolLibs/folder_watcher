@@ -63,12 +63,11 @@ private:
     void remove_files(Callbacks const&, std::vector<File>& to_remove) const;
 
 private:
-    fs::path                   _path{};
-    mutable fs::file_time_type _folder_last_change{};
-    mutable Clock::time_point  _folder_last_check{};
-    mutable bool               _path_exists{};
-    Config                     _config{};
-    mutable std::vector<File>  _files{};
+    fs::path                  _path{};
+    mutable Clock::time_point _folder_last_check{};
+    mutable bool              _path_exists{};
+    Config                    _config{};
+    mutable std::vector<File> _files{};
 };
 
 } // namespace folder_watcher

@@ -24,8 +24,6 @@ void FolderWatcher::update(Callbacks const& callbacks) const
     watch_for_edit_and_remove(callbacks);
 
     watch_for_new_paths(callbacks);
-
-    _folder_last_change = compute_time_of_last_change(_path);
 }
 
 void FolderWatcher::set_folder_path(Callbacks const& callbacks, fs::path const& path)
