@@ -3,7 +3,7 @@
 
 auto main() -> int
 {
-    auto const folder_watcher = folder_watcher::FolderWatcher{TEST_FOLDER};
+    auto folder_watcher = folder_watcher::FolderWatcher{TEST_FOLDER};
     while (true)
     {
         folder_watcher.update({
