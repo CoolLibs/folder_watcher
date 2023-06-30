@@ -23,7 +23,7 @@ static auto compute_sorted_files_entries(
         auto const on_entry = [&](std::filesystem::directory_entry const& entry) {
             if (!entry.is_regular_file() && !entry.is_symlink())
                 return;
-            files_entries.emplace_back(entry.path(), entry.last_write_time());
+            files_entries.emplace_back(internal::FileEntry{entry.path(), entry.last_write_time()});
         };
 
         if (check_recursively)
