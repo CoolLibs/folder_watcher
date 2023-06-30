@@ -63,7 +63,7 @@ void FolderWatcher::update(Callbacks const& callbacks)
     while (it_previous != _previous_sorted_files_entries.end()
            && it_current != current_sorted_files_entries.end())
     {
-        auto const comp = it_previous->path <=> it_current->path;
+        auto const comp = it_previous->path.string() <=> it_current->path.string(); // NB: we use <=> on the .string() because MacOS doesn't have it for std::filesystem::path just yet.
         // File exists in Previous but not in Current
         if (comp == std::strong_ordering::less)
         {
