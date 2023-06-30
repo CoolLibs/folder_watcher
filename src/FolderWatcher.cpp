@@ -13,6 +13,16 @@ FolderWatcher::FolderWatcher(std::filesystem::path folder_path, Config config)
     check_and_store_path_existence();
 };
 
+static auto operator_spaceship(std::filesystem::path const& path1, std::filesystem::path const& path2)
+    -> std::strong_ordering
+{
+    if (path1 < path2)
+        return std::strong_ordering::less;
+    if (path1 == path2)
+        return std::strong_ordering::equal;
+    return std::strong_ordering::greater;
+}
+
 static auto compute_sorted_files_entries(
     std::filesystem::path const& folder_path,
     bool                         check_recursively
@@ -63,7 +73,7 @@ void FolderWatcher::update(Callbacks const& callbacks)
     while (it_previous != _previous_sorted_files_entries.end()
            && it_current != current_sorted_files_entries.end())
     {
-        auto const comp = it_previous->path.string() <=> it_current->path.string(); // NB: we use <=> on the .string() because MacOS doesn't have it for std::filesystem::path just yet.
+        auto const comp = operator_spaceship(it_previous->path, it_current->path); // NB: we don't use <=> because MacOS doesn't have it for std::filesystem::path just yet.
         // File exists in Previous but not in Current
         if (comp == std::strong_ordering::less)
         {
