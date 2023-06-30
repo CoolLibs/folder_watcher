@@ -1,187 +1,186 @@
 name: Build
 
-on: 
+on:
   push:
-    branches: [ main ]
+    branches: [main]
 
   pull_request:
-    branches: [ main ]
-
+    branches: [main]
 
 env:
   TARGET: folder_watcher-tests
 
 jobs:
-#-----------------------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------------------------
   Windows_MSVC_Debug:
     name: Windows MSVC Debug
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Configure CMake
-      run: cmake .\tests -B ${{github.workspace}}\build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_C_COMPILER=cl -D CMAKE_CXX_COMPILER=cl 
+      - name: Configure CMake
+        run: cmake .\tests -B ${{github.workspace}}\build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_C_COMPILER=cl -D CMAKE_CXX_COMPILER=cl
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}\build --config Debug --target ${{env.TARGET}}
+      - name: Build
+        run: cmake --build ${{github.workspace}}\build --config Debug --target ${{env.TARGET}}
 
-#-----------------------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------------------------
   Windows_MSVC_Release:
     name: Windows MSVC Release
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Configure CMake
-      run: cmake .\tests -B ${{github.workspace}}\build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_C_COMPILER=cl -D CMAKE_CXX_COMPILER=cl
+      - name: Configure CMake
+        run: cmake .\tests -B ${{github.workspace}}\build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_C_COMPILER=cl -D CMAKE_CXX_COMPILER=cl
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}\build --config Release --target ${{env.TARGET}}
+      - name: Build
+        run: cmake --build ${{github.workspace}}\build --config Release --target ${{env.TARGET}}
 
-#-----------------------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------------------------
   Windows_Clang_Debug:
     name: Windows Clang Debug
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Configure CMake
-      run: cmake .\tests -B ${{github.workspace}}\build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -T ClangCL
+      - name: Configure CMake
+        run: cmake .\tests -B ${{github.workspace}}\build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -T ClangCL
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}\build --config Debug --target ${{env.TARGET}}
+      - name: Build
+        run: cmake --build ${{github.workspace}}\build --config Debug --target ${{env.TARGET}}
 
-#-----------------------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------------------------
   Windows_Clang_Release:
     name: Windows Clang Release
     runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Configure CMake
-      run: cmake .\tests -B ${{github.workspace}}\build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -T ClangCL
+      - name: Configure CMake
+        run: cmake .\tests -B ${{github.workspace}}\build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -T ClangCL
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}\build --config Release --target ${{env.TARGET}}
+      - name: Build
+        run: cmake --build ${{github.workspace}}\build --config Release --target ${{env.TARGET}}
 
-#-----------------------------------------------------------------------------------------------
+  #-----------------------------------------------------------------------------------------------
   Linux_GCC_Debug:
     name: Linux GCC Debug
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    
-    - name: Update package
-      run: sudo apt-get update -y
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Install glfw dependencies
-      run: sudo apt-get install -y libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
-    
-    - name: Configure CMake
-      run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Debug -D CMAKE_C_COMPILER=gcc-11 -D CMAKE_CXX_COMPILER=g++-11
+      - name: Update package
+        run: sudo apt-get update -y
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Debug --target ${{env.TARGET}}
-    
-#-----------------------------------------------------------------------------------------------
+      - name: Install glfw dependencies
+        run: sudo apt-get install -y libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+
+      - name: Configure CMake
+        run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Debug -D CMAKE_C_COMPILER=gcc-11 -D CMAKE_CXX_COMPILER=g++-11
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Debug --target ${{env.TARGET}}
+
+  #-----------------------------------------------------------------------------------------------
   Linux_GCC_Release:
     name: Linux GCC Release
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    
-    - name: Update package
-      run: sudo apt-get update -y
-    
-    - name: Install glfw dependencies
-      run: sudo apt-get install -y libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
-    
-    - name: Configure CMake
-      run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Release -D CMAKE_C_COMPILER=gcc-11 -D CMAKE_CXX_COMPILER=g++-11
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release --target ${{env.TARGET}}
+      - name: Update package
+        run: sudo apt-get update -y
 
-#-----------------------------------------------------------------------------------------------
+      - name: Install glfw dependencies
+        run: sudo apt-get install -y libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+
+      - name: Configure CMake
+        run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Release -D CMAKE_C_COMPILER=gcc-11 -D CMAKE_CXX_COMPILER=g++-11
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release --target ${{env.TARGET}}
+
+  #-----------------------------------------------------------------------------------------------
   Linux_Clang_Debug:
-    name: Linux Clang Debug 
+    name: Linux Clang Debug
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    
-    - name: Update package
-      run: sudo apt-get update -y
-    
-    - name: Install glfw dependencies
-      run: sudo apt-get install -y libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
-    
-    - name: Configure CMake
-      run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Debug -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Debug --target ${{env.TARGET}}
+      - name: Update package
+        run: sudo apt-get update -y
 
-#-----------------------------------------------------------------------------------------------
+      - name: Install glfw dependencies
+        run: sudo apt-get install -y libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+
+      - name: Configure CMake
+        run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Debug -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Debug --target ${{env.TARGET}}
+
+  #-----------------------------------------------------------------------------------------------
   Linux_Clang_Release:
     name: Linux Clang Release
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-    
-    - name: Update package
-      run: sudo apt-get update -y
-    
-    - name: Install glfw dependencies
-      run: sudo apt-get install -y libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
-    
-    - name: Configure CMake
-      run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Release -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release --target ${{env.TARGET}}
+      - name: Update package
+        run: sudo apt-get update -y
 
-#-----------------------------------------------------------------------------------------------
+      - name: Install glfw dependencies
+        run: sudo apt-get install -y libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev mesa-common-dev
+
+      - name: Configure CMake
+        run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Release -D CMAKE_C_COMPILER=clang -D CMAKE_CXX_COMPILER=clang++
+
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release --target ${{env.TARGET}}
+
+  #-----------------------------------------------------------------------------------------------
   MacOS_Clang_Debug:
-    name: MacOS Clang Debug 
+    name: MacOS Clang Debug
     runs-on: macos-11
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Configure CMake
-      run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Debug -D CMAKE_C_COMPILER=$(brew --prefix llvm)/bin/clang -D CMAKE_CXX_COMPILER=$(brew --prefix llvm)/bin/clang++
+      - name: Configure CMake
+        run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Debug -D CMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -D CMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Debug --target ${{env.TARGET}}
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Debug --target ${{env.TARGET}}
 
-#-----------------------------------------------------------------------------------------------
-  MacOS_Clang_Release: 
+  #-----------------------------------------------------------------------------------------------
+  MacOS_Clang_Release:
     name: MacOS Clang Release
     runs-on: macos-11
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
-    - name: Configure CMake
-      run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Release -D CMAKE_C_COMPILER=$(brew --prefix llvm)/bin/clang -D CMAKE_CXX_COMPILER=$(brew --prefix llvm)/bin/clang++
+      - name: Configure CMake
+        run: cmake ./tests -B ${{github.workspace}}/build -DWARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER=ON -D CMAKE_BUILD_TYPE=Release -D CMAKE_C_COMPILER=$(brew --prefix llvm@15)/bin/clang -D CMAKE_CXX_COMPILER=$(brew --prefix llvm@15)/bin/clang++
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release --target ${{env.TARGET}}               
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release --target ${{env.TARGET}}
