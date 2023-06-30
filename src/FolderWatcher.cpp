@@ -54,14 +54,14 @@ void FolderWatcher::update(Callbacks const& callbacks)
     if (!is_folder_path_valid())
         return;
 
-    auto const sorted_files_entries = compute_sorted_files_entries(_watched_folder_path, _config.watch_all_subfolders_recursively);
-    if (_previous_sorted_files_entries == sorted_files_entries)
+    auto const current_sorted_files_entries = compute_sorted_files_entries(_watched_folder_path, _config.watch_all_subfolders_recursively);
+    if (_previous_sorted_files_entries == current_sorted_files_entries)
         return; // Early return to optimize the most common case: no files have changed.
 
     auto it_previous = _previous_sorted_files_entries.begin();
-    auto it_current  = sorted_files_entries.begin();
+    auto it_current  = current_sorted_files_entries.begin();
     while (it_previous != _previous_sorted_files_entries.end()
-           && it_current != sorted_files_entries.end())
+           && it_current != current_sorted_files_entries.end())
     {
         auto const comp = it_previous->path <=> it_current->path;
         // File exists in Previous but not in Current
@@ -90,14 +90,14 @@ void FolderWatcher::update(Callbacks const& callbacks)
         callbacks.on_file_removed(it_previous->path);
         it_previous++;
     }
-    while (it_current != sorted_files_entries.end())
+    while (it_current != current_sorted_files_entries.end())
     {
         // File exists in Current but not in Previous
         callbacks.on_file_added(it_current->path);
         it_current++;
     }
 
-    _previous_sorted_files_entries = sorted_files_entries;
+    _previous_sorted_files_entries = current_sorted_files_entries;
 }
 
 void FolderWatcher::set_folder_path(std::filesystem::path const& path)
