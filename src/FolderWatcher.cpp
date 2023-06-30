@@ -64,22 +64,22 @@ void FolderWatcher::update_folder_path_validity(Callbacks const& callbacks) cons
 
 void FolderWatcher::watch_for_edit_and_remove(Callbacks const& callbacks) const
 {
-    auto to_remove = std::vector<File>{};
-    for (File& file : _files)
+    auto to_remove = std::vector<internal::FileEntry>{};
+    for (auto& file : _files)
     {
         // File deleted
-        if (!fs::exists(file.get_path()))
+        if (!fs::exists(file.path))
         {
             to_remove.push_back(file);
             continue;
         }
 
         // File changed
-        auto const last_change = compute_time_of_last_change(file.get_path());
-        if (last_change != file.get_time_of_last_change())
+        auto const last_change = compute_time_of_last_change(file.path);
+        if (last_change != file.last_write_time)
         {
-            file.set_time_of_last_change(last_change);
-            callbacks.on_file_changed(file.get_path());
+            file.last_write_time = last_change;
+            callbacks.on_file_changed(file.path);
         }
     }
     remove_files(callbacks, to_remove);
@@ -105,7 +105,7 @@ void FolderWatcher::add_to_files_if_necessary(Callbacks const& callbacks, fs::di
         return;
 
     // If the file is not found in _files, we add it
-    auto const file_iterator = std::find_if(_files.begin(), _files.end(), [&entry](File const& file) { return file.get_path() == entry; });
+    auto const file_iterator = std::find_if(_files.begin(), _files.end(), [&entry](internal::FileEntry const& file) { return file.path == entry.path(); });
     if (file_iterator != _files.end())
         return;
 
@@ -113,14 +113,14 @@ void FolderWatcher::add_to_files_if_necessary(Callbacks const& callbacks, fs::di
     callbacks.on_file_added(entry);
 }
 
-void FolderWatcher::remove_files(Callbacks const& callbacks, std::vector<File>& to_remove) const
+void FolderWatcher::remove_files(Callbacks const& callbacks, std::vector<internal::FileEntry> const& to_remove) const
 {
-    for (File const& file : to_remove)
-        callbacks.on_file_removed(file.get_path());
+    for (internal::FileEntry const& file : to_remove)
+        callbacks.on_file_removed(file.path);
 
     // Erase all common files in to_remove and in _files
-    std::erase_if(_files, [&to_remove](File const& f) {
-        return std::find(to_remove.begin(), to_remove.end(), f) != to_remove.end();
+    std::erase_if(_files, [&to_remove](internal::FileEntry const& f) {
+        return std::find_if(to_remove.begin(), to_remove.end(), [&](auto const& file) { return file.path == f.path; }) != to_remove.end();
     });
 }
 

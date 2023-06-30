@@ -3,10 +3,18 @@
 #include <filesystem>
 #include <functional>
 #include <vector>
-#include "File.hpp"
 #include "utils.hpp"
 
 namespace folder_watcher {
+
+namespace internal {
+
+struct FileEntry {
+    std::filesystem::path           path;
+    std::filesystem::file_time_type last_write_time;
+};
+
+} // namespace internal
 
 struct Config {
     /// If false, only watches the files that are direct childs of the watched path.
@@ -60,14 +68,14 @@ private:
     void add_to_files_if_necessary(Callbacks const&, const fs::directory_entry&) const;
 
     /// Removes a vector of `File`s from _files.
-    void remove_files(Callbacks const&, std::vector<File>& to_remove) const;
+    void remove_files(Callbacks const&, std::vector<internal::FileEntry> const& to_remove) const;
 
 private:
-    fs::path                  _path{};
-    mutable Clock::time_point _folder_last_check{};
-    mutable bool              _path_exists{};
-    Config                    _config{};
-    mutable std::vector<File> _files{};
+    fs::path                                 _path{};
+    mutable Clock::time_point                _folder_last_check{};
+    mutable bool                             _path_exists{};
+    Config                                   _config{};
+    mutable std::vector<internal::FileEntry> _files{};
 };
 
 } // namespace folder_watcher
