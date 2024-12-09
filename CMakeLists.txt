@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.20)
 
 set(WARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER OFF CACHE BOOL "ON iff you want to treat warnings as errors")
 
@@ -12,6 +12,7 @@ if(WARNINGS_AS_ERRORS_FOR_FOLDER_WATCHER)
 else()
     target_include_directories(folder_watcher SYSTEM PUBLIC include)
 endif()
+
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS src/*.cpp)
 target_sources(folder_watcher PRIVATE ${SRC_FILES})
 
